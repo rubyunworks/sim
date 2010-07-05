@@ -1,0 +1,59 @@
+== Delegating Mocks
+
+Require mock.rb library.
+
+  require 'sim/mock'
+
+Let's mock out a simple string.
+
+  obj = "shoe"
+  mck = Sim::Mock.new(obj)
+
+Now we can pre-declare that a method will be called.
+
+  mck.mock.upcase.called
+
+And we can ensure an expected return value.
+
+  mck.mock.upcase.returns("SHOE")
+
+And ensure the number of times to expect it.
+
+  mck.mock.upcase.count == 1
+
+Now we call the code in question.
+
+  mock.upcase
+
+And all our mocks assertions will be tested, and an appropriate error
+raised if they fail.
+
+We can do likewise with a call that takes arguments as well.
+
+  obj = "silly"
+
+  mck = Sim::Mock.new(obj)
+
+Was the method called?
+
+  assert mck.tellme.gsub.called?
+
+Was the return value what we expected?
+
+  mck.mock.gsub('l', '').returns("siy")
+  mck.mock.gsub('y', '').returns("sill")
+
+Was it called the number of times we expected?
+
+  mck.mock.gsub.count == 2
+
+Now we call the code in question and all our expections will be tested.
+
+  val1 = mck.gsub('l', '')
+  val2 = mck.gsub('y', '')
+
+Again the values return are just like the original's would be.
+
+  val1.assert == "siy"
+  val2.assert == "sill"
+

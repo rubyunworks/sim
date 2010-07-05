@@ -1,0 +1,43 @@
+== Singleton Mocks
+
+Require mock.rb library.
+
+  require 'sim/mock'
+
+Every object is given a special mock, accessible via the #mock method.
+We can use this #mock method then to set up the check a message call.
+
+   obj = "VALUE"
+
+   obj.mock.to_s.returns("VALUE")
+
+Now when we call the mocked method #to_s, the singleton mock will
+ensure it returns the expected value.
+
+   obj.to_s
+
+Lets makes sure it is in fact working by causing the mock to fail.
+
+   obj << "NOT"
+   expect(MockError){ obj.to_s }
+
+We can remove this special mock, and any other mocks we might have defined
+on the object via this technique by calling #unmock.
+
+   obj.unmock
+
+And as you can see, we are back to the normal String behaivor.
+
+   obj << "NOT"
+   obj.to_s
+
+Mocks can key-off of method arguments as well.
+
+  obj = "xxx"
+
+  obj.mock.chomp('x').returns("xx")
+  obj.mock.chomp('o').returns("xxx")
+
+  obj.chomp('x')
+  obj.chomp('o')
+

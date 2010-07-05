@@ -1,0 +1,124 @@
+= Sim's Contract Facility
+
+Sim's mocks are not like mocks in other frameworks.
+Traditional mocks are too closely knit to underlying
+implementation. Sim mocks are instead light-weight
+pre-assertion containers.
+
+Require mock.rb library.
+
+  require 'sim/contract'
+
+== Singleton "Quick" Contracts
+
+Every object is given it's own special built-in mock, accessible
+via the #mock method. We use the #mock method to specify define a
+"mock" invocation chain. For example:
+
+  obj = "hey"
+
+  obj.contract.upcase do |x|
+    x.should == "HEY"
+  end
+
+And now...
+
+  obj.upcase
+
+Try this failure...
+
+  obj.contract.upcase do |x|
+    x.should == "Hey"
+  end
+
+  expect(Assertion){ obj.upcase }
+
+Under the hood the effect is the same as +obj.extend(obj.contract)+.
+We can remove this special contract via #remove_contract.
+
+  obj.remove_contract
+  obj.upcase.assert == "HEY"
+
+Calling #remove_mock without an argument implies +obj.remove_mock(obj.mock)+.
+And as you can see, we are back to the normal String behaivor.
+
+== Mocks via Delegation
+
+Delegation provides the most robust means
+for implementing contracts. In this example we will add a
+contract to a simple string.
+
+  obj = "hello"
+
+We can create a reusable contract module by instantiating
+a new Contract class.
+
+  mck = Sim::Mock.new
+  mck.upcase.should == "HeLLo"
+
+Now we apply the mock module to the target object and
+we get a new mocked object, which delegates to the original.
+
+  alt = obj.mock(mck)
+
+When to invoke the target method, it will apply our assertion
+about the method, testing if the original object indeed
+produces the mocked result. In this case, the method #upcase
+produces "HELLO" and not "HeLLo" (ie, "HeLLo" != "HELLO"),
+so an Assertion exception is raised.
+
+  expect(Assertion){ alt.upcase }
+
+You can see that the original object is in no way affected
+by the mock.
+
+  obj.upcase.assert == "HELLO"
+
+The mocked method can have a a complex of arguments as well,
+for instance
+
+  mck.gsub('l','').should == "heo"
+
+Here
+
+  alt.gsub('l','')
+
+But also
+
+  mck.chomp('o').should == "hell"
+  alt.chomp('o')
+
+== Reusing Mocks via Object Extension
+
+Macks are modules, so they can also be reused via #extend.
+For example a new string:
+
+  obj = "hi"
+
+Can be mocked with the Mock object we used in the previous section.
+
+  obj.extend(mck)
+
+An Assertion error will be raised again because "hi".upcase != "HeLLo".
+
+  expect(Assertion){ obj.upcase }
+
+We can change the mock on the fly.
+
+  mck.upcase.should == "HI"
+
+Now we can call the #upcase method and nothing will be raised,
+since "hi".upcase == "HI".
+
+  obj.upcase
+
+The mock can be removed from the object using #remove_mock.
+
+  mck.upcase.should == "GO BOOM"
+  obj.remove_mock(mck)
+  obj.upcase
+
+Mock extensions aren't quite as clean as delegated mocks becuase Ruby
+can't unextend modules --the Mock module is still present. To compensate
+Mock removes all the previously defined mocking methods effectively allowing
+the original calls to pass thru the mock module.

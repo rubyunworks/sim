@@ -1,0 +1,58 @@
+== Reusing Bills
+
+Frist we need to require bill.rb library.
+
+  require 'sim/bill'
+
+Bills are modules, so they can also be reused like any module via #extend.
+For example, we can create a bill:
+
+  dbc = Sim::Bill.new
+
+  dbc.upcase do |x|
+    x.assert == 'Hi'
+  end
+
+Then apply it to any object we wish via #extend.
+
+  obj = "hi"
+  obj.extend(dbc)
+
+An Assertion error will be raised again because "hi".upcase != "Hi".
+
+  expect(Assertion){ obj.upcase }
+
+The contract can be removed from the object using #remove_contract.
+
+  obj.unbill(dbc)
+  obj.upcase
+
+Of course, static billings like the above are not often very reusable.
+We can use a dynamic bills, which provides us with a sort of
+"double entry bookkeeping".
+
+  dbc.upcase do |x|
+    x.assert == obj.split(//).map{ |c| c.capitalize }.join('')
+  end
+
+  obj.upcase
+
+Becuase bills extend the object, they have access to object' internal
+state. This should be used with care since it can create a tight coupling
+between your bills and your implementation, i.e. if implementation changes
+so must also change your bills. Nonetheless, it can be useful at times.
+
+  class Q
+    def initialize; @q = true; end
+    def to_s; "Q"; end
+  end
+  obj = Q.new
+
+  dbc.to_s do |x|
+    @q.assert == true  # internal state
+    x.assert  == "Q"
+  end
+
+  obj.extend(dbc)
+  obj.to_s
+

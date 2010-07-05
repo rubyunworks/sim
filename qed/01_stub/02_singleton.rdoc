@@ -1,0 +1,34 @@
+== Singleton Stubs
+
+Require stub.rb library.
+
+  require 'sim/stub'
+
+Every object is given a special stub, accessible via the #stub method.
+We can use this #stub method then to set up the return value of a
+message call.
+
+   obj = Object.new
+   obj.stub.anycall{ "VALUE" }
+
+As we can see obj#anycall now returns "VALUE".
+
+   obj.anycall.assert == "VALUE"
+
+We can remove this special stub, and any other stubs we might have defined
+on the object via this technique by calling #remove_stub.
+
+   obj.unstub
+
+And as you can see, we are back to the normal String behaivor.
+
+   expect(NameError){ obj.anycall }
+
+Stubs can key-off of method arguments as well. For instance:
+
+  obj.stub.chomp('x'){ "It is x." }
+  obj.stub.chomp('o'){ "It is o." }
+
+  obj.chomp('x').assert == "It is x."
+  obj.chomp('o').assert == "It is o."
+

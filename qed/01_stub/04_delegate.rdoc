@@ -1,0 +1,44 @@
+== Stubs via Delegation
+
+Require stub.rb library.
+
+  require 'sim/stub'
+
+Delegation provides the a slighly more robust form of reusable stubbing.
+In this example we will stub-out a simple string.
+
+   obj = "hello"
+
+We create a reusable stub module by instantiating a new Stub
+and stub it out with a stubbed method #upcase.
+
+   stb = Sim::Stub.new
+   stb.upcase{ "HeLLo" }
+
+To get a stubbed delgate of our object we call the #stub method,
+but with the stub module we wish to utilize as an argument.
+
+   objd = obj.stub(stb)
+
+We then have a newly stubbed version of object that delegates to
+the original.
+
+   objd.upcase.assert == "HeLLo"
+
+And as you can see, the original is still intact.
+
+   obj.upcase.assert == "HELLO"
+
+== Stub Methods with Arguments
+
+Thus far all of out stub definitions have been simple method
+invocations without arguments. Stubs can key-off of a arguments
+as well.
+
+  stb.chomp('x'){ "It is x." }
+  stb.chomp('o'){ "It is o." }
+
+  objd.chomp('x').assert == "It is x."
+  objd.chomp('o').assert == "It is o."
+
+QED.

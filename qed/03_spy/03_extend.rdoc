@@ -1,0 +1,65 @@
+== Reusing Mocks via Extend
+
+Require mock.rb library.
+
+  require 'sim/mock'
+
+Mocks are modules. If we look as the return value of the #mock
+method we will see that it is in fact a Mock object, which
+is a subclass of Module.
+
+  obj.mock.assert.kind_of?(::Sim::Mock)
+  obj.mock.assert.kind_of?(Module)
+
+That being so, we can create our own Stub modules and reuse them.
+
+   mck = Sim::Mock.new
+   mck.mock.to_s.returns("VALUE")
+
+To apply the Mock module to an object, use #extend.
+
+   obj = "VALUE"
+   obj.extend(mck)
+
+And we can see that the object has in fact been mocked.
+
+   obj.to_s
+
+To ensure this is indeed the case we can make the mock expectaiton fail.
+
+   obj << "NOT"
+   expect(Sim::MockError){ obj.to_s }
+
+Once applied, we can change the mock dynamically too.
+
+   mck.mock.to_s.returns{ "VALUENOT" }
+   obj.to_s
+
+Mock extensions can key-off of arguments as well.
+
+  stb.chomp('x'){ "It is x." }
+  stb.chomp('o'){ "It is o." }
+
+  obj.chomp('x').assert == "It is x."
+  obj.chomp('o').assert == "It is o."
+
+If we need the object to return to it's original behavior,
+we can remove the mock module by calling #unextend and
+passing in the mock module we wish to remove.
+
+   obj.unextend(mck)
+
+And we can see that the object is no longer mocked.
+
+   expect(Sim::MockError){ obj.to_s }
+
+Alternatively we can remove the mock module using #unmock.
+
+   obj.mock(mck)    # reapply the mock
+   obj.unmock(mck)
+
+   expect(NameError){ obj.to_s }
+
+As you might have surmised at this point, calling #unmock
+without an argument imples +obj.unmock(obj.mock)+.
+

@@ -1,0 +1,70 @@
+= Naked Stubbing
+
+Using a special stubbing library for Ruby boraders on a 
+waste of code because Ruy supports ad-hoc singleton methods.
+
+  obj = "hello"
+
+  def obj.upcase
+    "Hello"
+  end
+
+And we can easliy see we have in fact stubbed the object.
+
+  obj.upcase.assert == "Hello"
+
+Reusable stubs are just as easy --we need only make a module.
+
+  obj = "hello"
+
+  stb = Module.new do
+    def upcase
+      "Hello!"
+    end
+  end
+
+  obj.extend(stb)
+
+And again we can see we have in fact stubbed the object.
+
+  obj.upcase.assert == "Hello!"
+
+Handling stubs with arguments is a little less convenient,
+but not particularlly difficult using a case statement.
+
+  obj = "hello"
+
+  def obj.gsub(x, y)
+    return unless y == ''
+    case x
+    when 'l'
+      "heo"
+    when 'e'
+      "hllo"
+    end
+  end
+
+The only limitation here is for an easy way to remove stubs.
+To remove a single stub, we can use #remove_method on the
+singleton.
+
+  obj = "hello"
+
+  def obj.upcase ; "Hello" ; end
+
+  obj.upcase.assert == "Hello"
+
+  class << obj
+    remove_method(:upcase)
+  end
+
+  obj.upcase.assert == "HELLO"
+
+To remove an entire stub module we need to loop through each stub method
+one by one and remove them becuase Ruby has no means of unextending a module.
+But for this one could extend Ruby with a convenience method like #unextend.
+
+Delegating stubs are also fairly ease without any special library. Have a look
+at delegate.rb and forwardable.rb, which are both in Ruby's standard library.
+
+

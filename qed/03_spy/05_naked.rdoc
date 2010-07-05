@@ -1,0 +1,73 @@
+= Advanced Mocking
+
+While a little trickier than creating stubs or contracts,
+mocking too is rather stupid simple in Ruby. For example,
+lets say we want to check the return value of a call.
+
+  obj = "hello"
+
+  def obj.upcase
+    super.assert == "HELLO"
+  end
+
+And we can easliy see we have in fact insured that #upcase
+returns what we expect.
+
+  obj.upcase
+
+We should note, this is exactly the as defining a contract.
+If we prefer to check the return value after the fact (like RR),
+and (optionally) if we prefer a notation such as #returns?,
+it is easy enough to create.
+
+  class ::Object
+    def returns?(ret)
+      assert == ret
+    end
+  end
+
+Then we need only ask.
+
+  obj = "hello"
+  obj.upcase.returns?("HELLO")
+
+More complex mocking bahaviors may take a moment to code, but
+are not hard. For instance, we can count the number of calls
+to a method.
+
+  obj = "hello"
+
+  def obj._downcase_count
+    @_down_case_count ||= 0
+  end
+
+  def obj.downcase
+    @_down_case_count ||= 0
+    @_down_case_count += 1
+    super
+  end
+
+  obj.downcase
+  obj.downcase
+  obj.downcase
+
+  obj._downcase_count.assert == 3
+
+Likewise, we can do the same for any type of mock inspection we might
+conceive. Granted this is not as convenient as a dedicated framework
+might allow, but conversely it is not restricted by the design of a
+framework either. A few helper methods in you your helper.rb script
+would likely makeup for most if not all the difference.
+
+We won't do into futher details on reusable mocks at this point, since
+previous advanced topics covered the generanl concept of using modules.
+Needless to say that reusable mocks can be defined using modules too.
+
+Finally, let me just point out that mocks are generally not a good tool
+for testing, since they tend to be tighly coupled to implementation.
+This makes your tests fragile --if your implemention changes, then it is
+likely your mock test will too. Given this it is best to use mocks
+sparingly, and then such manual tenchinques as given above aren't nearly
+so inconventient.
+
+QED.

@@ -1,0 +1,35 @@
+== Singleton Bills
+
+Require the bill.rb library.
+
+  require 'sim/bill'
+
+Every object is given it's own special built-in "singleton" bill,
+accessible via the #bill method. We can use this method to specificly
+define a per-method requirement. For example:
+
+  obj = "hey"
+
+  obj.bill.upcase do |x|
+    x.assert == "HEY"
+  end
+
+Later, when #upcase it actually called on +obj+, the billing is ensured.
+
+  obj.upcase
+
+Our bill passed, as no Assertion was raised. Let create a failing
+bill to verify the opposite occurance.
+
+  obj.contract.upcase do |x|
+    x.assert == "Hey"
+  end
+
+  expect(Assertion){ obj.upcase }
+
+If we no long wish the special billing to apply, we can remove it via
+the #unbill method.
+
+  obj.unbill
+  obj.upcase.assert == "HEY"
+

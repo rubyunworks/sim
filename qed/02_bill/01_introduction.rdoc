@@ -1,0 +1,7 @@
+= Bills
+
+Bills are similar to stubs, but rather then stand-in for return values,
+they define pre-asserted conditions. I generally refer to them as 
+"light-weight mocks". Bills are also akin to *contracts* from
+DBC (Design By Contract) programming.
+

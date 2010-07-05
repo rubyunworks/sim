@@ -1,0 +1,4 @@
+= Stubs
+
+Stubs simply allow for the quick creation of controlled return values.
+

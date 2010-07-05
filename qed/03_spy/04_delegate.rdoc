@@ -1,0 +1,74 @@
+== Delegating Spies
+
+Require the spy.rb library.
+
+  require 'sim/spy'
+
+Let's spy on a simple string.
+
+  obj = "shoe"
+  spy = Sim::Spy.new(obj)
+
+For this demonstartion we will call a single method on the mock.
+
+  val = spy.upcase
+
+First of all notice that it behaves like the original object.
+
+  val.assert == "SHOE"
+
+Now we can inquire of the spy object concering various aspects of
+the execution.
+
+Was the method called?
+
+  assert spy.verify.upcase.called?
+
+Was the return value what we expected?
+
+  assert mck.verify.upcase.returned?("SHOE")
+
+Was it called the number of times we expected?
+
+  assert mck.verify.upcase.count == 1
+
+Let's try a call that takes arguments.
+
+  obj = "silly"
+
+  spy = Sim::Spy.new(obj)
+
+  val1 = spy.gsub('l', '')
+  val2 = spy.gsub('y', '')
+
+Again the values return are just like the original's would be.
+
+  val1.assert == "siy"
+  val2.assert == "sill"
+
+Was the method called?
+
+  assert mck.verify.gsub.called?
+
+Was the return value what we expected?
+
+  mck.verify.gsub('l', '').returned.assert == "siy"
+  mck.verify.gsub('y', '').returned.assert == "sill"
+
+Or we could say
+
+  assert spy.verify.gsub('l', '').returned?("siy")
+  assert spy.verify.gsub('y', '').returned?("sill")
+
+Notice without the argument the last call is considered.
+
+  mck.verify.gsub.last_returns.should == "sill"
+
+Or we could say
+
+  mck.verify.gsub.last_returned?("sill")
+
+Was it called the number of times we expected?
+
+  assert spy.verify.gsub.count == 2
+

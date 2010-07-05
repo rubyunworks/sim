@@ -1,0 +1,62 @@
+= Naked Billing
+
+A special billing library for Ruby is practually redundant because Ruby
+supports singleton methods.
+
+  obj = "hello"
+
+  # create bill
+  def obj.upcase
+    r = super
+    r.assert == "Hello"
+    r
+  end
+
+And we can easliy see we have in fact defined a bill.
+
+  expect(Assertion){ obj.upcase }
+
+Reusable bills are just as easy --we need only make a module.
+
+  obj = "hello"
+
+  stb = Module.new do
+    def upcase
+      r = super
+      r.assert == "Hello"
+      r
+    end
+  end
+
+  obj.extend(stb)
+
+And again we can see we have in fact billed the object.
+
+  expect(Assertion){ obj.upcase }
+
+Handling bills with arguments is a little less convenient,
+but not particularlly difficult using conditional statements.
+(NOTE: a 3rd party library like overload.rb could help.)
+
+  obj = "hello"
+
+  def obj.gsub(x, y)
+    return unless y == ''
+    r = super
+    case x
+    when 'l'
+      r.assert == "heo"
+    when 'e'
+      r.assert == "hllo"
+    end
+    r
+  end
+
+  obj.gsub('l', '')
+  obj.gsub('o', '')
+
+Again we are hampered from easily removing bills.
+But the techinques for doing so are the same as they are for stubs,
+so we will not reiterate them here. See "Naked Stubbing" demo for
+examples.
+

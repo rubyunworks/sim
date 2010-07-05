@@ -1,0 +1,38 @@
+== Mocks are Lazy Spies
+
+In reality a mock, per modern terminology, is nothing
+more than a lazy spy. Consider the following.
+Let's mock a simple string using a lazy spy.
+
+First we need the spy library.
+
+  require 'sim/spy'
+
+Now let's get our string obejct and our spy for it.
+
+  obj = "shoe"
+  spy = Sim::Spy.new(obj)
+
+As stated we can define the mock object as a "lazy" spy.
+
+  mock = lambda do
+    assert spy.verify.upcase.called?
+    assert spy.verify.upcase.returned?("SHOE")
+    assert spy.verify.upcase.count == 1
+  end
+
+Here we have simply defined a mock as a Proc object which tests
+the spy concering various aspects of the execution --which we
+heve not yet run.
+
+Now we can call that code in question.
+
+  spy.upcase
+
+And, like any mock library, only afterward do we verify the result.
+
+  mock.call
+
+That's all there is to it. Anything we can do with a spy, we can
+also do with a mock.
+

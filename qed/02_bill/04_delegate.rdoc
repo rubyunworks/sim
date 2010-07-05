@@ -1,0 +1,59 @@
+== Bill Delegation
+
+Require bill.rb library.
+
+  require 'sim/bill'
+
+Delegation provides an alternate means for implementing reusable
+bills. In this example we will add a bill to a simple string.
+
+  obj = "hello"
+
+We create a reusable bill module by instantiating
+a new Contract class.
+
+  dbc = Sim::Bill.new
+
+  dbc.upcase do |x|
+    x.assert == "HeLLo"
+  end
+
+Now we apply the bill module to the target object to
+we get a new billed object, which delegates to the
+original.
+
+  objc = obj.bill(dbc)
+
+When to invoke the target method, it will apply our assertion
+about the method, testing if the original object indeed
+produces the mocked result. In this case, the method #upcase
+produces "HELLO" and not "HeLLo" (ie, "HeLLo" != "HELLO"),
+so an Assertion exception is raised.
+
+  expect(Assertion){ objc.upcase }
+
+You can see that the original object is in no way affected
+by this bill.
+
+  obj.upcase.assert == "HELLO"
+
+Contract methods can have a arguments which can be used to
+distinguish bettwe invocations. For instance:
+
+  dbc.gsub('l','') do |x|
+    x.assert == "heo"
+  end
+
+  dbc.gsub('e','') do |x|
+    x.assert == "hllo"
+  end
+
+  objc.gsub('l','')
+  objc.gsub('e','')
+
+Delegated bills are a bit cleaner than using bill extension because
+they do not effect the original object; and Ruby can't unextend modules, so the
+bill modules must always remains. When using #unbill, we must remove
+all the previously defined bill methods effectively allowing the original
+calls to pass thru the still present bill modules.
+
