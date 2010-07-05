@@ -1,102 +1,63 @@
-require 'facets/functor'
-
-warn "sim/mock is still a work in progress"
+require 'delegate'
 
 module Sim
 
+  # = Contract
   #
-  class Mock #< Module
-    public_instance_methods(true).each{ |m| private m unless /^__/ =~ m }
+  class Contract < Module
+    #public_instance_methods(true).each{ |m| private m unless /(^__|^repond_to\?$)/ =~ m }
 
-    def initialize(object)
-      @__object = object
-      @__stats  = Statistics.new
+    def initialize
+      super
+      @__contracts = {}
+      @__delegating_module = Module.new
     end
 
-    def __tally(name, *args, &blk)
-      ret = @__object.__send__(name, *args, &blk)
-      @__stats << [name, args, blk, ret]
-      ret
+    #
+    def __delegating_module
+      @__delegating_module
     end
 
     #
     def method_missing(name, *args, &blk)
-      __tally(name, *args, &blk)
-      #define_method(name) do |*margs|
-      #end
-    end
+      __c = @__contracts
+      __c[[name, *args]] = blk
 
-    def tellme
-      stats = @__stats
-      Functor.new do |op, *margs|
-        Functor.new do |sop, *vargs|
-          stats.__send__(sop, op, *(margs + vargs))
+      define_method(name) do |*margs|
+        b = __c[[name, *margs]]
+        b ? b[super] : super
+      end
+
+      @__delegating_module.module_eval do
+        define_method(name) do |*margs|
+          b = __c[[name, *margs]]
+          b ? b[@__object.__send__(name, *margs)] : @__object.__send__(name, *margs)
         end
       end
     end
 
+    # = Mock::Delegator
     #
-    class Statistics
-      attr :callstack
+    class Delegator
+      #instance_methods(true).each{ |m| private m unless m.to_s =~ /^__/ }
 
-      def initialize
-        @callstack = []
+      def initialize(obj, mod)
+        @__object = obj
+        extend mod.__delegating_module
       end
 
-      def <<(trace)
-        @callstack.unshift(trace)
+      # Notice that __send__ calls at the private level, which is why #method_missing
+      # is never invoked as defined by the module. On the other hand, it
+      # should probably be making public calls, in which case it would need to
+      # delegate to a module instead of being one.
+      def method_missing(s, *a, &b)
+        if @__object.respond_to?(s)
+          @__object.__send__(s, *a, &b)
+        else
+          raise NoMethodError, "undefined method `#{s}' for #{@instance_delegate}:#{@instance_delegate.class}"
+        end
       end
-
-      #def does
-      #  Functor.new(op, *args)
-      #    __send__(op, *args)
-      #  end
-      #end
-      #alias_method :was, :does
-      #alias_method :is, :does
-
-      def returns(meth, *args)
-        trace = @callstack.find{|t| t[0] == meth && t[1] == args}
-        return false unless trace
-        trace.last
-      end
-      #alias_method :return, :returns
-
-      def returns?(meth, *args_and_val)
-        args = args_and_val[0...-1]
-        val  = args_and_val.last
-        returns(meth, *args) == val
-      end
-      alias_method :return?, :returns?
-
-      #
-      def last_returns(meth)
-        trace = @callstack.find{|t| t[0] == meth}
-        raise unless trace
-        trace.last
-      end
-
-      #
-      def last_returned?(meth, val)
-        last_returns(meth) == val
-      end
-
-      def count(meth)
-        @callstack.map{ |t| t[0] == meth }.size
-      end
-
-      def called?(meth)
-        trace = @callstack.find{ |t| t[0] == meth }
-        !trace.empty?
-      end
-
-    end
-
-  end
-
-end
-
-__END__
+    end#class Delegator
 
 =begin
     # Recorder keeps track of all calls made against it.
@@ -139,40 +100,19 @@ __END__
     end
 =end
 
-    # = Mock::Delegator
-    #
-    class Delegator
-      instance_methods(true).each{ |m| protected m unless m.to_s =~ /^__/ }
-
-      def initialize(object, mock_module)
-        @instance_delegate = object
-        extend(mock_module)
-      end
-
-      # Notice that __send__ calls at the private level, which is why #method_missing
-      # is not ever invoked as defined by the mock extension. On the other hand, it
-      # should probably be making public calls, in which case the mock would need to
-      # delegate to a module instead of being one.
-      def method_missing(s, *a, &b)
-        if @instance_delegate.respond_to?(s)
-          @instance_delegate.__send__(s, *a, &b)
-        else
-          raise NoMethodError, "undefined method `#{s}' for #{@instance_delegate}:#{@instance_delegate.class}"
-        end
-      end
-    end#class Delegator
-
   end#class Mock
 
   class ::Object #:nodoc:
     # Create mock object.
-    def mock(mock_module=nil)
-      if mock_module
-        Mock::Delegator.new(self, mock_module)
+    def contract(mod=nil)
+      if mod
+        del = Sim::Contract::Delegator.new(self, mod)
+        #del.extend(mod)
+        del
       else
-        @_mock ||= Mock.new
-        extend(@_mock)
-        @_mock
+        @_contract ||= Contract.new
+        extend(@_contract)
+        @_contract
       end
     end
 
@@ -182,17 +122,17 @@ __END__
     #--
     # TODO: Use #unmix (Carats?).
     #++
-    def remove_mock(mock_module=nil)
-      mock_module ||= @_mock
+    def remove_contract(mod=nil)
+      mod ||= @_contract
       #mock_module.__method_table__.each{ |rec| rec.__clear__ }  # OLD WAY
       #meths = mock_module.__method_table__.uniq
-      meths = mock_module.instance_methods(false)
+      meths = mod.instance_methods(false)
       meths.each do |meth|
-        mock_module.module_eval do
+        mod.module_eval do
           remove_method(meth) #define_method(meth){ |*args| super }
         end
       end
-      #extend(mock_module)
+      #extend(mod)
     end
   end#class ::Object
 
