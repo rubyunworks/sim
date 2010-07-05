@@ -19,28 +19,15 @@ module Sim
     #
     def method_missing(meth, *args, &block)
       table     = @table
-      interface = [meth, args, block_given?]
+      interface = [meth, args]
 
-      table[interface] = nil
+      table[interface] = block
 
+      # add method to module which will #extend object.
       define_method(meth) do |*args|
-        table[[meth, args, block_given?]]
+        table[[meth, args]].call
       end
-
-      Setter.new(table, interface)
     end
-
-    #
-    class Setter
-      def initialize(table, interface)
-        @table     = table
-        @interface = interface
-      end
-
-      def ==(result)
-        @table[@interface] = result
-      end
-    end#class Setter
 
     # = Stub::Delegator
     #
@@ -67,7 +54,8 @@ module Sim
         Stub::Delegator.new(self, stub_module)
       else
         @_stub ||= Stub.new
-        extend(@_stub)
+        # NOTE: this will not work if the object already has the singleton method.
+        extend(@_stub) #unless Stub===self
         @_stub
       end
     end
@@ -75,7 +63,7 @@ module Sim
     # We can't remove the module per-say.  So we have to
     # just neuter it. This is a very weak solution, but
     # it will suffice for the moment.
-    def remove_stub(stub_module=nil)
+    def unstub(stub_module=nil)
       stub_module ||= @_stub
       unextend(stub_module)
       #obj = self

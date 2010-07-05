@@ -2,18 +2,20 @@ require 'delegate'
 
 module Sim
 
-  # = Contract
+  # = Mock
   #
-  class Contract < Module
+  class Mock < Module
     #public_instance_methods(true).each{ |m| private m unless /(^__|^repond_to\?$)/ =~ m }
 
+    # New Mock object, sets up a ___ hash and delegating module.
+    #
     def initialize
       super
       @__contracts = {}
       @__delegating_module = Module.new
     end
 
-    #
+    # Access to the delgating module.
     def __delegating_module
       @__delegating_module
     end
@@ -104,15 +106,15 @@ module Sim
 
   class ::Object #:nodoc:
     # Create mock object.
-    def contract(mod=nil)
+    def mock(mod=nil)
       if mod
-        del = Sim::Contract::Delegator.new(self, mod)
+        del = Sim::Mock::Delegator.new(self, mod)
         #del.extend(mod)
         del
       else
-        @_contract ||= Contract.new
-        extend(@_contract)
-        @_contract
+        @_mock ||= Mock.new
+        extend(@_mock)
+        @_mock
       end
     end
 
@@ -122,8 +124,8 @@ module Sim
     #--
     # TODO: Use #unmix (Carats?).
     #++
-    def remove_contract(mod=nil)
-      mod ||= @_contract
+    def remove_mock(mod=nil)
+      mod ||= @_mock
       #mock_module.__method_table__.each{ |rec| rec.__clear__ }  # OLD WAY
       #meths = mock_module.__method_table__.uniq
       meths = mod.instance_methods(false)
